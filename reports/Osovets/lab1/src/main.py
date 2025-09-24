@@ -3,24 +3,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-# -----------------------------
-# 1. Определение пути к файлу
-# -----------------------------
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Корень проекта — на пять уровней выше
+
 project_root = os.path.abspath(os.path.join(current_dir, '..', '..', '..', '..', '..'))
 
 file_path = os.path.join(project_root, 'auto-mpg.csv')
 print("Читаем файл из:", file_path)
 
-# Названия колонок
 columns = [
     'mpg', 'cylinders', 'displacement', 'horsepower', 'weight',
     'acceleration', 'model_year', 'origin', 'car_name'
 ]
 
-# Чтение датасета
+
 df = pd.read_csv(
     file_path,
     sep=",",
@@ -29,7 +25,6 @@ df = pd.read_csv(
     header=None
 )
 
-# --- Исправляем типы данных ---
 numeric_cols = [
     'mpg', 'cylinders', 'displacement', 'horsepower',
     'weight', 'acceleration', 'model_year', 'origin'
@@ -38,23 +33,18 @@ numeric_cols = [
 for col in numeric_cols:
     df[col] = pd.to_numeric(df[col], errors='coerce')
 
-# Преобразуем model_year в полный год сразу
 df['model_year'] = 1900 + df['model_year']
 
-# car_name — строка
 df['car_name'] = df['car_name'].astype(str)
 
-# Заполняем пропуски средними значениями
 df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
 
-# --- Новый признак age ---
 current_year = datetime.now().year
 df['age'] = current_year - df['model_year']
 
-# --- Полный вывод всех колонок ---
 pd.set_option('display.max_columns', None)
 
-# --- Выводим информацию ---
+
 print("\nТипы данных:")
 print(df.dtypes)
 
