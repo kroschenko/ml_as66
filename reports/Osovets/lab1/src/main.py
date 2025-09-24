@@ -1,99 +1,120 @@
+import os
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
+from datetime import datetime
 
 # -----------------------------
-# 1. Загрузка данных
+# 1. Определение пути к файлу
 # -----------------------------
-url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data'
-columns = ['mpg', 'cylinders', 'displacement', 'horsepower', 'weight',
-           'acceleration', 'model_year', 'origin', 'car_name']
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
-df = pd.read_csv(url, names=columns, sep=r'\s+', na_values='?')
+# Корень проекта — на пять уровней выше
+project_root = os.path.abspath(os.path.join(current_dir, '..', '..', '..', '..', '..'))
 
-# -----------------------------
-# 2. Обработка пропусков
-# -----------------------------
-df['horsepower'] = df['horsepower'].astype(float)
-df['horsepower'] = df['horsepower'].fillna(df['horsepower'].mean())
+file_path = os.path.join(project_root, 'auto-mpg.csv')
+print("Читаем файл из:", file_path)
 
-# -----------------------------
-# 3. Исследовательский анализ
-# -----------------------------
-print("Типы данных:\n", df.dtypes)
-print("\nКоличество пропусков:\n", df.isna().sum())
-print("\nОсновные статистические показатели:\n", df.describe())
+# Названия колонок
+columns = [
+    'mpg', 'cylinders', 'displacement', 'horsepower', 'weight',
+    'acceleration', 'model_year', 'origin', 'car_name'
+]
 
-# -----------------------------
-# 4. Преобразование категориального признака
-# -----------------------------
-df = pd.get_dummies(df, columns=['origin'], prefix='origin')
+# Чтение датасета
+df = pd.read_csv(
+    file_path,
+    sep=",",
+    names=columns,
+    na_values='?',
+    header=None
+)
 
-# -----------------------------
-# 5. Создание нового признака age
-# -----------------------------
-df['age'] = 1983 - (1900 + df['model_year'])
+# --- Исправляем типы данных ---
+numeric_cols = [
+    'mpg', 'cylinders', 'displacement', 'horsepower',
+    'weight', 'acceleration', 'model_year', 'origin'
+]
 
-# -----------------------------
-# 6. Визуализация данных
-# -----------------------------
+for col in numeric_cols:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
-# 6.1 Расход топлива vs вес
-plt.figure(figsize=(8,6))
-plt.scatter(df['weight'], df['mpg'], alpha=0.7)
-plt.title('mpg vs weight')
-plt.xlabel('Вес автомобиля')
-plt.ylabel('Расход топлива (mpg)')
-plt.grid(True)
+# Преобразуем model_year в полный год сразу
+df['model_year'] = 1900 + df['model_year']
+
+# car_name — строка
+df['car_name'] = df['car_name'].astype(str)
+
+# Заполняем пропуски средними значениями
+df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
+
+# --- Новый признак age ---
+current_year = datetime.now().year
+df['age'] = current_year - df['model_year']
+
+# --- Полный вывод всех колонок ---
+pd.set_option('display.max_columns', None)
+
+# --- Выводим информацию ---
+print("\nТипы данных:")
+print(df.dtypes)
+
+print("\nКоличество пропусков:")
+print(df.isnull().sum())
+
+print("\nОсновные статистические показатели:")
+print(df.describe())
+
+print("\nПример новых данных (model_year и age):")
+print(df[['model_year', 'age']].head())
+
+# --- Графики ---
+# 1. Зависимость расхода топлива от веса
+fig1, ax1 = plt.subplots(figsize=(8,6))
+ax1.scatter(df['weight'], df['mpg'], alpha=0.7)
+ax1.set_xlabel("Вес")
+ax1.set_ylabel("MPG (миль на галлон)")
+ax1.set_title("Зависимость расхода топлива от веса автомобиля")
+ax1.grid(True)
 plt.show()
+plt.close(fig1)
 
-# 6.2 Распределение количества цилиндров
-cylinder_counts = df['cylinders'].value_counts().sort_index()
-plt.figure(figsize=(8,6))
-plt.bar(cylinder_counts.index, cylinder_counts.values, color='skyblue')
-plt.title('Распределение цилиндров')
-plt.xlabel('Количество цилиндров')
-plt.ylabel('Количество автомобилей')
+# 2. Гистограмма распределения мощности
+fig2, ax2 = plt.subplots(figsize=(8,6))
+ax2.hist(df['horsepower'], bins=30, color='skyblue', edgecolor='black')
+ax2.set_xlabel("Horsepower")
+ax2.set_ylabel("Количество автомобилей")
+ax2.set_title("Распределение мощности автомобилей")
+ax2.grid(True)
 plt.show()
+plt.close(fig2)
 
-# 6.3 Гистограмма расхода топлива
-plt.figure(figsize=(8,6))
-plt.hist(df['mpg'], bins=15, color='lightgreen', edgecolor='black')
-plt.title('Распределение расхода топлива (mpg)')
-plt.xlabel('mpg')
-plt.ylabel('Количество автомобилей')
+# 3. Boxplot для сравнения MPG по количеству цилиндров
+fig3, ax3 = plt.subplots(figsize=(8,6))
+df.boxplot(column='mpg', by='cylinders', ax=ax3)
+ax3.set_xlabel("Цилиндры")
+ax3.set_ylabel("MPG")
+ax3.set_title("MPG по количеству цилиндров")
+plt.suptitle("")  # убираем автоматический заголовок
+ax3.grid(True)
 plt.show()
+plt.close(fig3)
 
-# 6.4 Расход топлива vs horsepower
-plt.figure(figsize=(8,6))
-plt.scatter(df['horsepower'], df['mpg'], color='orange', alpha=0.7)
-plt.title('mpg vs horsepower')
-plt.xlabel('Мощность (horsepower)')
-plt.ylabel('Расход топлива (mpg)')
-plt.grid(True)
+# 4. Гистограмма распределения возраста автомобилей
+fig4, ax4 = plt.subplots(figsize=(8,6))
+ax4.hist(df['age'], bins=20, color='lightgreen', edgecolor='black')
+ax4.set_xlabel("Возраст автомобиля (лет)")
+ax4.set_ylabel("Количество автомобилей")
+ax4.set_title("Распределение возраста автомобилей")
+ax4.grid(True)
 plt.show()
+plt.close(fig4)
 
-# 6.5 Расход топлива vs displacement
-plt.figure(figsize=(8,6))
-plt.scatter(df['displacement'], df['mpg'], color='red', alpha=0.7)
-plt.title('mpg vs displacement')
-plt.xlabel('Объём двигателя (displacement)')
-plt.ylabel('Расход топлива (mpg)')
-plt.grid(True)
+# 5. Дополнительно: зависимость MPG от возраста
+fig5, ax5 = plt.subplots(figsize=(8,6))
+ax5.scatter(df['age'], df['mpg'], alpha=0.7, color='orange')
+ax5.set_xlabel("Возраст автомобиля (лет)")
+ax5.set_ylabel("MPG (миль на галлон)")
+ax5.set_title("Зависимость расхода топлива от возраста автомобиля")
+ax5.grid(True)
 plt.show()
-
-# 6.6 Корреляционная матрица
-plt.figure(figsize=(10,8))
-corr = df[['mpg','cylinders','displacement','horsepower','weight','acceleration','age']].corr()
-sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f")
-plt.title('Корреляционная матрица')
-plt.show()
-
-# 6.7 Boxplot веса автомобиля по количеству цилиндров
-plt.figure(figsize=(8,6))
-sns.boxplot(x='cylinders', y='weight', data=df, hue='cylinders', legend=False, palette='Set2')
-plt.title('Вес автомобиля по количеству цилиндров')
-plt.xlabel('Количество цилиндров')
-plt.ylabel('Вес автомобиля')
-plt.show()
+plt.close(fig5)
