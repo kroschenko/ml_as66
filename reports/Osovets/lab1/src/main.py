@@ -57,8 +57,8 @@ print(df.describe())
 print("\nПример новых данных (model_year и age):")
 print(df[['model_year', 'age']].head())
 
-# --- Графики ---
-# 1. Зависимость расхода топлива от веса
+
+# Зависимость расхода топлива от веса
 fig1, ax1 = plt.subplots(figsize=(8,6))
 ax1.scatter(df['weight'], df['mpg'], alpha=0.7)
 ax1.set_xlabel("Вес")
@@ -68,7 +68,7 @@ ax1.grid(True)
 plt.show()
 plt.close(fig1)
 
-# 2. Гистограмма распределения мощности
+# 2. Распределения мощности
 fig2, ax2 = plt.subplots(figsize=(8,6))
 ax2.hist(df['horsepower'], bins=30, color='skyblue', edgecolor='black')
 ax2.set_xlabel("Horsepower")
@@ -78,18 +78,18 @@ ax2.grid(True)
 plt.show()
 plt.close(fig2)
 
-# 3. Boxplot для сравнения MPG по количеству цилиндров
+# Boxplot для сравнения MPG по количеству цилиндров
 fig3, ax3 = plt.subplots(figsize=(8,6))
 df.boxplot(column='mpg', by='cylinders', ax=ax3)
 ax3.set_xlabel("Цилиндры")
 ax3.set_ylabel("MPG")
 ax3.set_title("MPG по количеству цилиндров")
-plt.suptitle("")  # убираем автоматический заголовок
+plt.suptitle("")
 ax3.grid(True)
 plt.show()
 plt.close(fig3)
 
-# 4. Гистограмма распределения возраста автомобилей
+# Распределения возраста автомобилей
 fig4, ax4 = plt.subplots(figsize=(8,6))
 ax4.hist(df['age'], bins=20, color='lightgreen', edgecolor='black')
 ax4.set_xlabel("Возраст автомобиля (лет)")
@@ -99,7 +99,7 @@ ax4.grid(True)
 plt.show()
 plt.close(fig4)
 
-# 5. Дополнительно: зависимость MPG от возраста
+# Зависимость MPG от возраста
 fig5, ax5 = plt.subplots(figsize=(8,6))
 ax5.scatter(df['age'], df['mpg'], alpha=0.7, color='orange')
 ax5.set_xlabel("Возраст автомобиля (лет)")
