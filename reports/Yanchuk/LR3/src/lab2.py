@@ -24,6 +24,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X_auto, y_auto, test_size=0.2, random_state=42
 )
 
+# === Обучение модели ===
 reg_model = LinearRegression()
 reg_model.fit(X_train, y_train)
 y_pred = reg_model.predict(X_test)
@@ -35,10 +36,23 @@ print("R²:", round(r2, 3))
 
 plt.figure(figsize=(8,6))
 sns.scatterplot(x=df_auto['horsepower'], y=df_auto['mpg'], alpha=0.6, label="Данные")
-sns.regplot(x='horsepower', y='mpg', data=df_auto, scatter=False, color='red', label="Линия регрессии")
+
+hp_range = np.linspace(df_auto['horsepower'].min(), df_auto['horsepower'].max(), 100)
+cyl_mean = df_auto['cylinders'].mean()
+weight_mean = df_auto['weight'].mean()
+
+X_line = pd.DataFrame({
+    'cylinders': [cyl_mean]*len(hp_range),
+    'horsepower': hp_range,
+    'weight': [weight_mean]*len(hp_range)
+})
+
+y_line = reg_model.predict(X_line)
+
+plt.plot(hp_range, y_line, color='red', label="Модель (LinearRegression)")
 plt.xlabel("Horsepower")
 plt.ylabel("MPG")
-plt.title("Зависимость расхода топлива от мощности двигателя")
+plt.title("Зависимость расхода топлива от мощности двигателя (по обученной модели)")
 plt.legend()
 plt.show()
 
