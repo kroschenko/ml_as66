@@ -5,18 +5,16 @@ import seaborn as sns
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
-# Загрузим файл из текущей папки
+# Загрузка данных
 df = pd.read_csv('fish.csv')
-
-# Остальной код остается без изменений
 print(df.head())
 
-# Объявляем признаки и целевую
+# Объявление признаков и целевой переменной
 features = ['Length1', 'Length2', 'Length3', 'Height', 'Width']
 X = df[features]
 y = df['Weight']
 
-# Обучение модели линейной регрессии
+# Обучение модели линейной регрессии на всех признаках
 model = LinearRegression()
 model.fit(X, y)
 
@@ -27,17 +25,25 @@ rmse = np.sqrt(mean_squared_error(y, y_pred))
 print(f'R2: {r2:.4f}')
 print(f'RMSE: {rmse:.4f}')
 
-# Построение графика Length3 vs Weight с линией регрессии
+# Извлечение коэффициентов и intercept из модели
+coef = model.coef_
+intercept = model.intercept_
+
+# Коэффициент для признака Length3
+coef_length3 = coef[features.index('Length3')]
+
+# Создаем значения x для построения линии (границы диапазона Length3)
+x_vals = np.array([df['Length3'].min(), df['Length3'].max()])
+
+# Вычисляем предсказания y на основе только Length3
+y_vals = intercept + coef_length3 * x_vals
+
+# Визуализация
 plt.figure(figsize=(8, 6))
 sns.scatterplot(x=df['Length3'], y=y, label='Actual')
-# Обучение модели только по Length3 для линии регрессии
-single_feature = df[['Length3']]
-model_single = LinearRegression().fit(single_feature, y)
-y_pred_single = model_single.predict(single_feature)
-sns.lineplot(x=df['Length3'], y=y_pred_single,
-             color='red', label='Regression line')
+plt.plot(x_vals, y_vals, color='red', label='Regression line (из модели)')
 plt.xlabel('Length3')
 plt.ylabel('Weight')
-plt.title('Weight vs Length3 with Regression Line')
+plt.title('Weight vs Length3 with Regression Line (из модели)')
 plt.legend()
 plt.show()
