@@ -1,6 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+pd.set_option('display.float_format', '{:.0f}'.format)
+pd.set_option('show_dimensions', False)
+
 # 1.
 df = pd.read_csv('Melbourne_housing.csv', na_values=['missing', 'inf'],)
 
@@ -41,6 +44,7 @@ plt.show()
 # 4
 top_suburbs = df['Suburb'].value_counts().nlargest(5).index
 avg_prices = df[df['Suburb'].isin(top_suburbs)].groupby('Suburb')['Price'].mean()
+avg_prices = avg_prices.round(0).astype(int)
 print("\nСредняя цена по 5 самым популярным пригородам:")
 print(avg_prices)
 
