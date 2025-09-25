@@ -46,16 +46,29 @@ print("Количество пропусков в Age после обработ�
 print(f"Медианное значение, использованное для заполнения: {median_age:.1f}")
 
 # ========== ЗАДАНИЕ 4 ==========
-print("\n" + "="*30)
-print("ЗАДАНИЕ 4: One-Hot Encoding для категориальных признаков")
-print("="*30)
+# One-Hot Encoding без удаления первой категории
+df = pd.get_dummies(df, columns=['Sex', 'Embarked'], drop_first=False)
 
-df = pd.get_dummies(df, columns=['Sex', 'Embarked'], drop_first=True)
+# Приводим к типу int, чтобы избежать True/False
+for col in df.columns:
+    if col.startswith('Sex_') or col.startswith('Embarked_'):
+        df[col] = df[col].astype(int)
+
+# Переименовываем колонки для читаемости
+df.rename(columns={
+    'Sex_female': 'Sex_Female',
+    'Sex_male': 'Sex_Male',
+    'Embarked_C': 'Embarked_C',
+    'Embarked_Q': 'Embarked_Q',
+    'Embarked_S': 'Embarked_S'
+}, inplace=True)
+
+# Выводим результат
 print("Категориальные признаки преобразованы.")
 print("Новые признаки:", [col for col in df.columns if 'Sex_' in col or 'Embarked_' in col])
 
 print("\nПервые строки после кодирования:")
-print(df[['Sex_male', 'Embarked_Q', 'Embarked_S']].head(10).to_string(index=False))
+print(df[['Sex_Female', 'Sex_Male', 'Embarked_C', 'Embarked_Q', 'Embarked_S']].head(10).to_string(index=False))
 
 # ========== ЗАДАНИЕ 5 ==========
 print("\n" + "="*30)
