@@ -2,12 +2,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 print("Загрузка данных...")
 data = pd.read_csv("BostonHousing.csv")
 print("Данные успешно загружены!")
 print(f"Размер данных: {data.shape}")
 
+print("\n" + "="*50)
+print("СТАТИСТИКА ДАННЫХ:")
+print("="*50)
+print(data.describe())
+print("="*50 + "\n")
 
 print("Строим матрицу корреляции...")
 corr_matrix = data.corr()
@@ -26,9 +30,7 @@ for i in range(len(corr_matrix.columns)):
 
 plt.tight_layout()
 plt.savefig("corr_matrix.png", dpi=300)
-plt.show()  
-
-
+plt.show()
 
 print("Строим диаграмму рассеяния...")
 x = data["MEDV"]
@@ -47,9 +49,7 @@ plt.legend()
 plt.grid(True, linestyle="--", alpha=0.7)
 plt.tight_layout()
 plt.savefig("scatter_MEDV_LSTAT.png", dpi=300)
-plt.show()  
-
-
+plt.show()
 
 print("Строим гистограмму распределения CRIM...")
 plt.figure(figsize=(8, 6))
@@ -59,9 +59,7 @@ plt.ylabel("Количество районов")
 plt.title("Распределение CRIM")
 plt.tight_layout()
 plt.savefig("hist_CRIM.png", dpi=300)
-plt.show()  
-
-
+plt.show()
 
 print("Выполняем нормализацию...")
 normalized_data = (data - data.min()) / (data.max() - data.min())
@@ -70,4 +68,4 @@ print("\nНормализованные признаки (первые стро�
 print(normalized_data.head())
 
 print("\nГотово! Все графики сохранены и показаны.")
-input("Нажмите Enter для выхода...")  
+input("Нажмите Enter для выхода...")
