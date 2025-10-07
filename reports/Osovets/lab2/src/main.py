@@ -196,11 +196,9 @@ def enhanced_classification_analysis():
     print("\nСравнение моделей:")
     print(results_df.round(4))
 
-    # Выбор лучшей модели по Accuracy
     best_model_name = results_df.loc[results_df['Accuracy'].idxmax(), 'Model']
     best_y_pred = models[best_model_name]
 
-    # Матрица ошибок
     cm = confusion_matrix(y_test, best_y_pred)
     plt.figure(figsize=(6,5))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
