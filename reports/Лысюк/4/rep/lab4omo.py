@@ -81,7 +81,7 @@ model2 = MLP2()
 train_model(model2, X_train_tensor, y_train_tensor)
 acc2, report2 = evaluate_model(model2, X_test_tensor, y_test_tensor)
 
-print("=== MLP с 1 скрытым слоем ===")
+print("=== MLP с 1 скрытым слоем === ")
 print(f"Точность: {acc1:.4f}")
 print(report1)
 
