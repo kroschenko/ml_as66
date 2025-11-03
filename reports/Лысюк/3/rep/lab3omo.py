@@ -37,7 +37,7 @@ for name, model in models.items():
     cm = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(6, 5))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-    plt.title(f"Матрица ошибок: {name}")
+    plt.title(f"Матрица  ошибок: {name}")
     plt.xlabel("Предсказано")
     plt.ylabel("Истинное")
     plt.show()
