@@ -4,84 +4,56 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+from pathlib import Path
 
-# 1.  Загрузка данных по конкретной ссылке.  Для этого требуется установка gdown и наличие файла по ссылке.
-#     Иначе, переключаемся на встроенный в sklearn датасет.
+local_file = Path(r"D:\у--ба\3 kurs\омо\2\california_housing.csv")
+
+if not local_file.exists():
+    raise FileNotFoundError(f" Файл не найден: {local_file}")
+
 try:
-    import gdown
-
-    file_id = '1Hw1xVRsIj-6PzOhOv825IUIWsRSPJR8m'
-
-    url = f'https://drive.google.com/uc?id={file_id}'
-
-    output = 'california_housing.csv'
-
-    # Скачайть файл.
-    gdown.download(url, output, quiet=False)  # quiet=False покажет процесс загрузки
-
-    # Загрузите данные из CSV-файла.
-    df = pd.read_csv(output)
-
-    print("Данные успешно загружены из Google Drive.")
-
-except ImportError:
-    print("Библиотека gdown не установлена.  Пожалуйста, установите её с помощью pip install gdown.")
-    print("Переключение на встроенный датасет fetch_california_housing.")
-    from sklearn.datasets import fetch_california_housing
-
-    data = fetch_california_housing(as_frame=True)
-    df = data.frame
-
+    df = pd.read_csv(local_file)
+    print(f" Данные успешно загружены из локального файла: {local_file}")
 except Exception as e:
-    print(f"Ошибка при загрузке данных из Google Drive: {e}")
-    print("Переключение на встроенный датасет fetch_california_housing.")
-    from sklearn.datasets import fetch_california_housing
+    raise RuntimeError(f"Ошибка при чтении файла: {e}")
 
-    data = fetch_california_housing(as_frame=True)
-    df = data.frame
+target_column = "median_house_value"
+if target_column not in df.columns:
+    raise ValueError(f" Столбец '{target_column}' не найден в датасете.")
 
+# Уд нечисловых призн 
+df_numeric = df.select_dtypes(include=["number"])
 
-# 2. Подготовка данных (независимо от источника)
-if 'MedHouseVal' in df.columns:
-    X = df.drop(columns='MedHouseVal')
-    y = df['MedHouseVal']
-else:  #  Если вдруг назван иначе, то ошибка
-    print("Столбец 'MedHouseVal' не найден.  Убедитесь, что CSV-файл содержит этот столбец.")
-    raise ValueError("Не найден столбец 'MedHouseVal'")
+df_filled = df_numeric.fillna(df_numeric.median(numeric_only=True))
 
+X = df_filled.drop(columns=target_column)
+y = df_filled[target_column]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 3. Обучение модели
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# 4. Предсказания
 y_pred = model.predict(X_test)
-
-# 5. Оценка качества
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
-print(f"MSE: {mse:.2f}")
-print(f"R²: {r2:.2f}")
+print(f"\n MSE: {mse:.2f}")
+print(f" R²: {r2:.2f}")
 
+if "median_income" in X_test.columns:
+    plt.figure(figsize=(8, 6))
+    sns.scatterplot(x=X_test["median_income"], y=y_test, label="Фактические значения")
 
-# 6. Визуализация зависимости от median_income
-plt.figure(figsize=(8, 6))
-sns.scatterplot(x=X_test['MedInc'], y=y_test, label='Фактические значения')
+    plot_data = pd.DataFrame({
+        "median_income": X_test["median_income"],
+        "Predicted": y_pred
+    }).sort_values("median_income")
 
-# Правильное построение линии регрессии
-medinc_test = X_test['MedInc']
-y_pred_test = model.predict(X_test)
+    sns.lineplot(x=plot_data["median_income"], y=plot_data["Predicted"], color="red", label="Линия регрессии")
 
-plot_data = pd.DataFrame({'MedInc': medinc_test, 'Predicted': y_pred_test})
-plot_data = plot_data.sort_values('MedInc')
-
-sns.lineplot(x=plot_data['MedInc'], y=plot_data['Predicted'], color='red', label='Линия регрессии')
-
-plt.xlabel('Median Income')
-plt.ylabel('Median House Value')
-plt.title('Зависимость стоимости жилья от дохода')
-plt.legend()
-plt.tight_layout()
-plt.show()
+    plt.xlabel("median_income")
+    plt.ylabel("Median House Value")
+    plt.title("Зависимость стоимости жилья от дохода")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
