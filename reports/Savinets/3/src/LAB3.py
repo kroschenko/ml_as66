@@ -6,6 +6,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import f1_score
 
+# настройки
 data = pd.read_csv("bank.csv")
 data.columns = data.columns.str.strip()
 

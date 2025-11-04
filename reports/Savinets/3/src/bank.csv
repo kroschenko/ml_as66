@@ -11161,3 +11161,4 @@ age,job,marital,education,default,balance,housing,loan,contact,day,month,duratio
 32,technician,single,secondary,no,29,no,no,cellular,19,aug,156,2,-1,0,unknown,no
 43,technician,married,secondary,no,0,no,yes,cellular,8,may,9,2,172,5,failure,no
 34,technician,married,secondary,no,0,no,no,cellular,9,jul,628,1,-1,0,unknown,no
+34,technician,married,secondary,no,0,no,no,cellular,9,jul,628,1,-1,0,unknown,no
