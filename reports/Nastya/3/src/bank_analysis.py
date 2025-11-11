@@ -1,1 +1,233 @@
-import pandas as pdimport numpy as npfrom sklearn.model_selection import train_test_splitfrom sklearn.preprocessing import LabelEncoder, StandardScalerfrom sklearn.neighbors import KNeighborsClassifierfrom sklearn.tree import DecisionTreeClassifierfrom sklearn.svm import SVCfrom sklearn.metrics import accuracy_score, f1_score, confusion_matriximport matplotlib.pyplot as pltimport warningswarnings.filterwarnings('ignore')def load_and_preprocess_data():    try:        df = pd.read_csv(r'G:\ЛАБЫ 3 КУРС\ОМО\ml_as66\reports\Nastya\3\src\bank.csv')        print("Файл bank.csv успешно загружен!")    except Exception as e:        print(f"Ошибка загрузки: {e}")        return None        print(f"Размер данных: {df.shape}")    print("\nНазвания колонок:")    print(df.columns.tolist())        return dfdef encode_categorical_features(df):    df_encoded = df.copy()        categorical_columns = df_encoded.select_dtypes(include=['object']).columns.tolist()        print(f"\nКатегориальные признаки: {categorical_columns}")        label_encoders = {}    for col in categorical_columns:        if col != 'deposit':            le = LabelEncoder()            df_encoded[col] = le.fit_transform(df_encoded[col].astype(str))            label_encoders[col] = le        le_target = LabelEncoder()    df_encoded['deposit'] = le_target.fit_transform(df_encoded['deposit'])        return df_encoded, label_encoders, le_targetdef split_and_scale_data(df_encoded):    X = df_encoded.drop('deposit', axis=1)    y = df_encoded['deposit']        X_train, X_test, y_train, y_test = train_test_split(        X, y, test_size=0.3, random_state=42, stratify=y    )        scaler = StandardScaler()    X_train_scaled = scaler.fit_transform(X_train)    X_test_scaled = scaler.transform(X_test)        print(f"\nРазмеры выборок:")    print(f"Обучающая: {X_train.shape}")    print(f"Тестовая: {X_test.shape}")    print(f"Распределение классов: {np.bincount(y_train)} / {np.bincount(y_test)}")        return X_train, X_test, X_train_scaled, X_test_scaled, y_train, y_test, scalerdef train_models(X_train, X_train_scaled, y_train):    models = {        'k-NN': KNeighborsClassifier(n_neighbors=5),        'Decision Tree': DecisionTreeClassifier(random_state=42, max_depth=5),        'SVM': SVC(random_state=42, probability=True)    }        trained_models = {}    for name, model in models.items():        print(f"\nОбучение {name}...")        if name in ['k-NN', 'SVM']:            model.fit(X_train_scaled, y_train)        else:            model.fit(X_train, y_train)        trained_models[name] = model        print(f"{name} обучен!")        return trained_modelsdef investigate_knn(X_train_scaled, X_test_scaled, y_train, y_test):    print("\n" + "="*60)    print("ИССЛЕДОВАНИЕ k-NN: ВЛИЯНИЕ КОЛИЧЕСТВА СОСЕДЕЙ")    print("="*60)        k_values = range(1, 21)    train_scores = []    test_scores = []        for k in k_values:        knn = KNeighborsClassifier(n_neighbors=k)        knn.fit(X_train_scaled, y_train)                train_pred = knn.predict(X_train_scaled)        test_pred = knn.predict(X_test_scaled)                train_accuracy = accuracy_score(y_train, train_pred)        test_accuracy = accuracy_score(y_test, test_pred)                train_scores.append(train_accuracy)        test_scores.append(test_accuracy)                print(f"k={k:2d}: Train Accuracy = {train_accuracy:.4f}, Test Accuracy = {test_accuracy:.4f}")        plt.figure(figsize=(12, 6))    plt.plot(k_values, train_scores, 'b-', label='Обучающая выборка', marker='o')    plt.plot(k_values, test_scores, 'r-', label='Тестовая выборка', marker='s')    plt.xlabel('Количество соседей (k)')    plt.ylabel('Accuracy')    plt.title('Влияние количества соседей на качество k-NN')    plt.legend()    plt.grid(True)    plt.xticks(k_values)    plt.tight_layout()    plt.show()        best_k = k_values[np.argmax(test_scores)]    best_accuracy = max(test_scores)    print(f"\nОптимальное количество соседей: k={best_k} (Accuracy = {best_accuracy:.4f})")        return best_kdef evaluate_models(trained_models, X_train, X_test, X_train_scaled, X_test_scaled, y_train, y_test):    results = {}        print("\n" + "="*60)    print("ОЦЕНКА ТОЧНОСТИ МОДЕЛЕЙ")    print("="*60)        for name, model in trained_models.items():        if name in ['k-NN', 'SVM']:            X_test_used = X_test_scaled            X_train_used = X_train_scaled        else:            X_test_used = X_test            X_train_used = X_train                y_pred_train = model.predict(X_train_used)        y_pred_test = model.predict(X_test_used)                train_accuracy = accuracy_score(y_train, y_pred_train)        test_accuracy = accuracy_score(y_test, y_pred_test)        test_f1 = f1_score(y_test, y_pred_test)                results[name] = {            'train_accuracy': train_accuracy,            'test_accuracy': test_accuracy,            'f1_score': test_f1        }                print(f"\n{name}:")        print(f"  Accuracy (train): {train_accuracy:.4f}")        print(f"  Accuracy (test):  {test_accuracy:.4f}")        print(f"  F1-Score (test):  {test_f1:.4f}")                cm = confusion_matrix(y_test, y_pred_test)        print(f"  Матрица ошибок:\n{cm}")        return resultsdef compare_results(results):    print("\n" + "="*70)    print("СРАВНЕНИЕ РЕЗУЛЬТАТОВ И ВЫВОДЫ")    print("="*70)        best_model = max(results, key=lambda x: results[x]['test_accuracy'])    best_accuracy = results[best_model]['test_accuracy']        print(f"ЛУЧШАЯ МОДЕЛЬ: {best_model}")    print(f"Лучшая точность: {best_accuracy:.4f}")        print("\nСРАВНИТЕЛЬНАЯ ТАБЛИЦА:")    print("Модель           | Train Acc | Test Acc  | F1-Score  | Переобучение")    print("-" * 65)        for model_name, metrics in results.items():        train_acc = metrics['train_accuracy']        test_acc = metrics['test_accuracy']        f1 = metrics['f1_score']        overfitting = train_acc - test_acc                print(f"{model_name:15} | {train_acc:.4f}    | {test_acc:.4f}    | {f1:.4f}    | {overfitting:.4f}")        print("\nВЫВОДЫ О ПРИМЕНИМОСТИ МЕТОДОВ:")        for model_name, metrics in results.items():        test_acc = metrics['test_accuracy']        overfitting = metrics['train_accuracy'] - metrics['test_accuracy']                print(f"\n{model_name}:")        if test_acc > 0.8:            print("  Высокая точность - хорошо подходит для данных")        elif test_acc > 0.7:            print("  Средняя точность - приемлемый вариант")        else:            print("  Низкая точность - требуется доработка")                    if overfitting > 0.1:            print("  Заметное переобучение")        elif overfitting > 0.05:            print("  Умеренное переобучение")        else:            print("  Хорошая обобщающая способность")def main():    print("БАНКОВСКИЙ МАРКЕТИНГ - СРАВНЕНИЕ МОДЕЛЕЙ k-NN, DECISION TREE, SVM")    print("="*70)        df = load_and_preprocess_data()    if df is None:        return        df_encoded, label_encoders, le_target = encode_categorical_features(df)        X_train, X_test, X_train_scaled, X_test_scaled, y_train, y_test, scaler = split_and_scale_data(df_encoded)        best_k = investigate_knn(X_train_scaled, X_test_scaled, y_train, y_test)        models = {        'k-NN': KNeighborsClassifier(n_neighbors=best_k),        'Decision Tree': DecisionTreeClassifier(random_state=42, max_depth=5),        'SVM': SVC(random_state=42, probability=True)    }        trained_models = {}    for name, model in models.items():        print(f"\nОбучение {name}...")        if name in ['k-NN', 'SVM']:            model.fit(X_train_scaled, y_train)        else:            model.fit(X_train, y_train)        trained_models[name] = model        results = evaluate_models(trained_models, X_train, X_test, X_train_scaled, X_test_scaled, y_train, y_test)        compare_results(results)        return trained_models, results, best_kif __name__ == "__main__":    trained_models, results, best_k = main()
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import f1_score, classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+
+print("=" * 70)
+print("ЛАБОРАТОРНАЯ РАБОТА №3: Сравнение классических методов классификации")
+print("Вариант 11: Bank Marketing - прогноз подписки на срочный вклад")
+print("=" * 70)
+
+# 1. Загрузка данных
+print("\n1. ЗАГРУЗКА ДАННЫХ")
+file_paths = [
+    r'G:\ЛАБЫ 3 КУРС\ОМО\ml_as66\reports\Nastya\3\src\bank.csv',
+    'G:/ЛАБЫ 3 КУРС/ОМО/ml_as66/reports/Nastya/3/src/bank.csv',
+    'bank.csv',
+    '../bank.csv'
+]
+
+df = None
+for path in file_paths:
+    try:
+        df = pd.read_csv(path)
+        print(f"✓ Данные загружены из: {path}")
+        break
+    except:
+        continue
+
+if df is None:
+    print(" Ошибка: Не удалось загрузить данные bank.csv")
+    exit(1)
+
+# 2. Преобразование категориальных признаков
+print("\n2. ПРЕОБРАЗОВАНИЕ КАТЕГОРИАЛЬНЫХ ПРИЗНАКОВ")
+print(f"Исходный размер данных: {df.shape}")
+
+# Проверяем целевую переменную
+if 'deposit' not in df.columns:
+    print(" Ошибка: Отсутствует целевая переменная 'deposit'")
+    exit(1)
+
+# Бинарное кодирование целевой переменной
+df['deposit'] = df['deposit'].map({'yes': 1, 'no': 0})
+
+# Кодирование категориальных признаков
+categorical_columns = ['job', 'marital', 'education', 'default', 'housing', 
+                      'loan', 'contact', 'month', 'poutcome']
+categorical_columns = [col for col in categorical_columns if col in df.columns]
+
+label_encoders = {}
+for column in categorical_columns:
+    le = LabelEncoder()
+    df[column] = le.fit_transform(df[column].astype(str))
+    label_encoders[column] = le
+
+print(f"Закодировано категориальных признаков: {len(categorical_columns)}")
+print(f"Баланс классов: {df['deposit'].value_counts().to_dict()}")
+
+# 3. Разделение выборки
+print("\n3. РАЗДЕЛЕНИЕ ВЫБОРКИ")
+X = df.drop('deposit', axis=1)
+y = df['deposit']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42, stratify=y
+)
+
+print(f"Обучающая выборка: {X_train.shape}")
+print(f"Тестовая выборка: {X_test.shape}")
+
+# Масштабирование для k-NN и SVM
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 4. Обучение и оценка моделей
+print("\n4. ОБУЧЕНИЕ И ОЦЕНКА МОДЕЛЕЙ")
+
+# 4.1. K-NN с исследованием параметра k
+print("\n--- K-NN: Исследование влияния количества соседей ---")
+k_range = range(1, 21)
+knn_f1_scores = []
+
+for k in k_range:
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit(X_train_scaled, y_train)
+    y_pred = knn.predict(X_test_scaled)
+    f1 = f1_score(y_test, y_pred)
+    knn_f1_scores.append(f1)
+
+# Визуализация для k-NN
+plt.figure(figsize=(12, 4))
+
+plt.subplot(1, 2, 1)
+plt.plot(k_range, knn_f1_scores, marker='o', linewidth=2, markersize=6)
+plt.title('K-NN: Зависимость F1-score от количества соседей', fontsize=12)
+plt.xlabel('Количество соседей (k)')
+plt.ylabel('F1-score')
+plt.grid(True, alpha=0.3)
+plt.xticks(range(1, 21, 2))
+
+best_k = k_range[np.argmax(knn_f1_scores)]
+plt.axvline(x=best_k, color='red', linestyle='--', alpha=0.7, 
+            label=f'Лучшее k = {best_k}')
+plt.legend()
+
+# Обучение лучшей модели K-NN
+knn_best = KNeighborsClassifier(n_neighbors=best_k)
+knn_best.fit(X_train_scaled, y_train)
+y_pred_knn = knn_best.predict(X_test_scaled)
+f1_knn = f1_score(y_test, y_pred_knn)
+
+print(f"Оптимальное k: {best_k}")
+print(f"F1-score K-NN: {f1_knn:.4f}")
+
+# 4.2. Дерево решений
+print("\n--- Дерево решений ---")
+dt = DecisionTreeClassifier(random_state=42)
+param_grid_dt = {'max_depth': range(1, 21)}
+grid_dt = GridSearchCV(dt, param_grid_dt, cv=5, scoring='f1')
+grid_dt.fit(X_train, y_train)
+
+dt_best = grid_dt.best_estimator_
+y_pred_dt = dt_best.predict(X_test)
+f1_dt = f1_score(y_test, y_pred_dt)
+
+print(f"Оптимальная глубина: {grid_dt.best_params_['max_depth']}")
+print(f"F1-score Decision Tree: {f1_dt:.4f}")
+
+# 4.3. SVM
+print("\n--- Метод опорных векторов (SVM) ---")
+svm = SVC(random_state=42)
+param_grid_svm = {
+    'C': [0.1, 1, 10],
+    'kernel': ['linear', 'rbf']
+}
+grid_svm = GridSearchCV(svm, param_grid_svm, cv=5, scoring='f1')
+grid_svm.fit(X_train_scaled, y_train)
+
+svm_best = grid_svm.best_estimator_
+y_pred_svm = svm_best.predict(X_test_scaled)
+f1_svm = f1_score(y_test, y_pred_svm)
+
+print(f"Лучшие параметры SVM: {grid_svm.best_params_}")
+print(f"F1-score SVM: {f1_svm:.4f}")
+
+# 5. Сравнение моделей по F1-score
+print("\n5. СРАВНЕНИЕ МОДЕЛЕЙ ПО F1-SCORE")
+results = {
+    'K-NN': f1_knn,
+    'Decision Tree': f1_dt,
+    'SVM': f1_svm
+}
+
+# Визуализация сравнения
+plt.subplot(1, 2, 2)
+models = list(results.keys())
+scores = list(results.values())
+colors = ['skyblue', 'lightgreen', 'lightcoral']
+
+bars = plt.bar(models, scores, color=colors, edgecolor='black', alpha=0.8)
+plt.title('Сравнение моделей по F1-score', fontsize=12)
+plt.ylabel('F1-score')
+plt.ylim(0, 1)
+
+# Добавляем значения на столбцы
+for bar, score in zip(bars, scores):
+    plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+             f'{score:.4f}', ha='center', va='bottom', fontweight='bold')
+
+plt.tight_layout()
+plt.savefig('models_comparison.png', dpi=300, bbox_inches='tight')
+plt.show()
+
+# Вывод результатов
+print("\n" + "="*70)
+print("РЕЗУЛЬТАТЫ:")
+for model, score in results.items():
+    print(f"{model:15} | F1-score: {score:.4f}")
+
+best_model = max(results, key=results.get)
+best_score = results[best_model]
+print(f"\n ЛУЧШАЯ МОДЕЛЬ: {best_model} (F1-score: {best_score:.4f})")
+
+# 6. Детальный анализ лучшей модели
+print("\n6. ДЕТАЛЬНЫЙ АНАЛИЗ ЛУЧШЕЙ МОДЕЛИ")
+if best_model == 'K-NN':
+    print(classification_report(y_test, y_pred_knn))
+    best_predictions = y_pred_knn
+elif best_model == 'Decision Tree':
+    print(classification_report(y_test, y_pred_dt))
+    best_predictions = y_pred_dt
+else:
+    print(classification_report(y_test, y_pred_svm))
+    best_predictions = y_pred_svm
+
+# Матрица ошибок для лучшей модели
+plt.figure(figsize=(8, 6))
+cm = confusion_matrix(y_test, best_predictions)
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+            xticklabels=['Не подпишется', 'Подпишется'],
+            yticklabels=['Не подпишется', 'Подпишется'])
+plt.title(f'Матрица ошибок: {best_model}\n', fontsize=14)
+plt.xlabel('Предсказанный класс')
+plt.ylabel('Истинный класс')
+plt.savefig('confusion_matrix.png', dpi=300, bbox_inches='tight')
+plt.show()
+
+# 7. ВЫВОДЫ И РЕКОМЕНДАЦИИ
+print("\n" + "="*70)
+print("ВЫВОДЫ И РЕКОМЕНДАЦИИ ДЛЯ БАНКОВСКОГО МАРКЕТИНГА")
+print("="*70)
+
+print(f"""
+На основе проведенного анализа для задачи прогнозирования подписки на срочный вклад:
+
+1. ЛУЧШАЯ МОДЕЛЬ: {best_model}
+   - F1-score: {best_score:.4f}
+   - Наиболее эффективна для выявления потенциальных клиентов
+
+2. СРАВНЕНИЕ МЕТОДОВ:
+   - K-NN:     {f1_knn:.4f} (лучший k = {best_k})
+   - Дерево:   {f1_dt:.4f} (глубина = {grid_dt.best_params_['max_depth']})
+   - SVM:      {f1_svm:.4f} (параметры: {grid_svm.best_params_})
+
+""")
