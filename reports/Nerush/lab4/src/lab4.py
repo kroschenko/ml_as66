@@ -7,9 +7,9 @@ from sklearn.metrics import accuracy_score, f1_score
 import pandas as pd
 
 # 1. Загрузка и подготовка данных
-data = pd.read_csv("E:/Projects/ml_as66/reports/Nerush/lab3/src/adult.csv")
+data = pd.read_csv("E:/Projects/ml_as66/reports/Nerush/lab4/src/adult.csv")
 
-# Целевая переменная: >50K = 1, <=50K = 0
+# Целевая переменная >50K = 1, <=50K = 0
 data["income"] = LabelEncoder().fit_transform(data["income"])
 y = data["income"].values
 X = data.drop("income", axis=1)
@@ -82,7 +82,7 @@ def train_model(model, optimizer, X_train, y_train, epochs=20):
 print("Обучение базовой модели")
 train_model(model_base, optimizer_base, X_train, y_train)
 
-print("\nОбучение глубокой модели")
+print("\nОбучение deep модели")
 train_model(model_deep, optimizer_deep, X_train, y_train)
 
 # 5. Оценка моделей
