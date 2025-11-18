@@ -14,7 +14,7 @@ hidden_size = 2
 num_samples = 200
 train_ratio = 0.8
 
-x = torch.linspace(0, 10, num_samples).reshape(-1, 1)
+x = torch.linspace(0, 100, num_samples).reshape(-1, 1)
 X = torch.cat([x ** i for i in range(1, input_size + 1)], dim=1)
 y = target_function(x, a, b, c, d)
 
@@ -49,7 +49,6 @@ losses = []
 epochs = 500
 
 for epoch in range(epochs):
-    model.train()
     y_pred = model(X_train)
     loss = criterion(y_pred, y_train)
     optimizer.zero_grad()
