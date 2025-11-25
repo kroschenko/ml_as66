@@ -1,34 +1,40 @@
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score, mean_squared_error
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
 
-data = pd.read_csv("Fish.csv")
+df = pd.read_csv('fish.csv')
+print(df.head())
 
-X = data[["Length1", "Length2", "Length3", "Height", "Width"]]
-y = data["Weight"]
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+features = ['Length1', 'Length2', 'Length3', 'Height', 'Width']
+X = df[features]
+y = df['Weight']
 
 model = LinearRegression()
-model.fit(X_train, y_train)
+model.fit(X, y)
 
-y_pred = model.predict(X_test)
+y_pred = model.predict(X)
+r2 = r2_score(y, y_pred)
+rmse = np.sqrt(mean_squared_error(y, y_pred))
+print(f'R2: {r2:.4f}')
+print(f'RMSE: {rmse:.4f}')
 
-r2 = r2_score(y_test, y_pred)
-rmse = np.sqrt(mean_squared_error(y_test, y_pred)
+coef = model.coef_
+intercept = model.intercept_
 
-print("Качество модели:")
-print("R² =", round(r2, 2))
-print("RMSE =", round(rmse, 2))
+coef_length3 = coef[features.index('Length3')]
 
-plt.scatter(data["Length3"], data["Weight"], alpha=0.6, label="Данные")
-plt.plot(data["Length3"], model.predict(data[["Length1","Length2","Length3","Height","Width"]]),
-         color="red", label="Линия регрессии")
-plt.xlabel("Length3")
-plt.ylabel("Weight")
-plt.title("Зависимость длины (Length3) и веса (Weight)")
+x_vals = np.array([df['Length3'].min(), df['Length3'].max()])
+
+y_vals = intercept + coef_length3 * x_vals
+
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=df['Length3'], y=y, label='Actual')
+plt.plot(x_vals, y_vals, color='red', label='Regression line (из модели)')
+plt.xlabel('Length3')
+plt.ylabel('Weight')
+plt.title('Weight vs Length3 with Regression Line (из модели)')
 plt.legend()
 plt.show()
