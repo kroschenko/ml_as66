@@ -6,17 +6,17 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # 1. Генерация обучающих и тестовых данных
-def target_function(x, a=0.2, b=0.4, c=0.09, d=0.4):
+def target_function(x, a=0.3, b=0.1, c=0.06, d=0.1):
     return a * torch.cos(b * x) + c * torch.sin(d * x)
 
-a, b, c, d = 0.2, 0.4, 0.09, 0.4
+a, b, c, d = 0.3, 0.1, 0.06, 0.1
 input_size = 1
 hidden_size = 2
 window_size = 6
 num_samples = 200
 train_ratio = 0.8
 
-x = torch.linspace(0, 20, num_samples).reshape(-1, 1)
+x = torch.linspace(0, 100, num_samples).reshape(-1, 1)
 y = target_function(x, a, b, c, d)
 
 X = []
